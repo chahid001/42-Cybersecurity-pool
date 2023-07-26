@@ -32,16 +32,16 @@ func checkPath(location string) string {
 	return filename
 }	
 
+func incI(i int) int{
+	return i+1
+}
+
 func downloadImage(location string, url string, max_depth int) error {
 	os.MkdirAll(location, os.ModePerm);
-	
-	if (i == max_depth) {
-		os.Exit(0)
-	}
 	res, err := http.Get(url)
 
 	if (err != nil) {
-		println("An error kharij 3an saytara")
+		println("error: can't download the file.")
 		os.Exit(1)
 	}
 
@@ -51,15 +51,13 @@ func downloadImage(location string, url string, max_depth int) error {
 
 	out, err := os.Create(filename)
 	if (err != nil) {
-		println("An error kharij 3an saytara")
+		println("error: can't create the file.")
 		os.Exit(1)
 	}
 
 	defer out.Close()
 
 	_, err = io.Copy(out, res.Body)
-	i :+= 1
-	println(i)
 	return err
 }
 
@@ -85,8 +83,9 @@ func scrapPic(url string, max_depth int, location string) {
 		link := e.Attr("src")
 		file := checkLink(link)
 
-		if (file == true) {
+		if (file == true && max_depth > 0) {
 			downloadImage(location, link, max_depth)
+			max_depth--
 		}
 	})
 
