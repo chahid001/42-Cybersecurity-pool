@@ -1,78 +1,121 @@
 package main
 
-import "fmt"
-// import "github.com/gocolly/colly"
-import "os"
-
-type codeReturn struct {
-	code int
-	url string
-	n string
-	location string
-}
+import (
+	"fmt"
+	"os"
+	"github.com/gocolly/colly"
+	"flag"
+	"strings"
+	"net/http"
+	"io"
+	"path"
+)
 
 func printUsage() {
 	fmt.Println("./spider [-rlp] URL")
 	os.Exit(1)
 }
 
-func checkOptions(argc int, argv[] string) codeReturn {
-	var ret codeReturn;
-	if (argc == 3) { //case -r url
-		if (argv[1] == "-r") { 
-			ret.code = 1
-			ret.url = argv[2]
-			return ret
-		}
-	} else if (argc == 5) { 
-		if (argv[1] == "-r" && argv[2] == "-l") { //case -r -l N url
-			ret.code = 2
-			ret.n = argv[3]
-			ret.url = argv[4]
-			return ret
-		} else if (argv[1] == "-r" && argv[2] == "-p") { //case -r -p location url
-			ret.code = 3
-			ret.location = argv[3]
-			ret.url = argv[4]
-			return ret
-		}
-	} else if (argc == 7) {
-		if (argv[1] == "-r" && argv[2] == "-l" && argv[4] == "-p") { //case -r -l N -p location url
-			ret.code = 4
-			ret.n = argv[3]
-			ret.location = argv[5]
-			ret.url = argv[6]
-			return ret
-		} else if (argv[1] == "-r" && argv[2] == "-p" && argv[4] == "-l") { //case -r -p location -l N url
-			ret.code = 4
-			ret.location = argv[3]
-			ret.n = argv[5]
-			ret.url = argv[6]
-			return ret
-		}
+func checkNum(nb int) bool {
+	if (nb < 1) {
+		return false
 	}
-	printUsage()
-	return ret
+	return true
+}
+
+func checkPath(location string) string {
+	if (strings.HasSuffix(location, "/")) {
+		filename := location
+		return filename
+	}
+	filename := location + "/"
+	return filename
+}	
+
+func downloadImage(location string, url string, max_depth int) error {
+	os.MkdirAll(location, os.ModePerm);
+	
+	if (i == max_depth) {
+		os.Exit(0)
+	}
+	res, err := http.Get(url)
+
+	if (err != nil) {
+		println("An error kharij 3an saytara")
+		os.Exit(1)
+	}
+
+	defer res.Body.Close()
+	filename := checkPath(location)
+	filename = filename + path.Base(url)
+
+	out, err := os.Create(filename)
+	if (err != nil) {
+		println("An error kharij 3an saytara")
+		os.Exit(1)
+	}
+
+	defer out.Close()
+
+	_, err = io.Copy(out, res.Body)
+	i :+= 1
+	println(i)
+	return err
+}
+
+func checkLink(link string) bool {
+	if (strings.HasSuffix(link, "jpg") ||
+		strings.HasSuffix(link, "jpeg") ||
+		strings.HasSuffix(link, "png") ||
+		strings.HasSuffix(link, "gif") ||
+		strings.HasSuffix(link, "bmp")) {
+			if (strings.HasPrefix(link, "http://") ||
+				strings.HasPrefix(link, "https://")) {
+					return true
+			}
+			return false
+	} 
+	return false
+}
+
+func scrapPic(url string, max_depth int, location string) {
+	c := colly.NewCollector()
+
+	c.OnHTML("img", func(e *colly.HTMLElement) {
+		link := e.Attr("src")
+		file := checkLink(link)
+
+		if (file == true) {
+			downloadImage(location, link, max_depth)
+		}
+	})
+
+	c.OnError(func(_ *colly.Response, err error) {
+		fmt.Println("Something went wrong:", err)
+		os.Exit(1)
+	})
+
+	c.Visit(url)
 }
 
 func main() {
 
-	var ret codeReturn;
-	if (len(os.Args) < 3){
+	recursive := flag.Bool("r", false, "download images recursively")
+	max_depth := flag.Int("l", 5, "max depth level of recursive downloads")
+	location := flag.String("p", "./data/", "the path where the downloaded files will be saved")
+
+	flag.Parse()
+	args := flag.Args()
+
+	if (len(args) < 1 || !*recursive) {
+		flag.Usage()
 		printUsage()
 	}
-	ret = checkOptions(len(os.Args), os.Args)
-	print(ret.code)
-	// c := colly.NewCollector()
 
-	// // Find and visit all links
-	// c.OnHTML("img", func(e *colly.HTMLElement) {
-	// 	e.Request.Visit(e.Attr("src"))
-	// })
-
-	// c.OnRequest(func(r *colly.Request) {
-	// 	fmt.Println(r.URL)
-	// })
-
-	// c.Visit("http://go-colly.org/")
+	url := args[0]
+	if (!checkNum(*max_depth)) {
+		println("Invalid option: max depth number")
+		printUsage()
+	}
+	scrapPic(url, *max_depth, *location)
 }
