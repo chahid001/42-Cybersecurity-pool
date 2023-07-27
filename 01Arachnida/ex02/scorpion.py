@@ -3,6 +3,7 @@ from PIL.ExifTags import TAGS
 import sys
 import os
 
+original_stdout = sys.stdout
 
 def printUsage():
     print("./scorpion FILE1 [FILE2 ...]")
@@ -44,7 +45,7 @@ def extractMetadata(x):
             if isinstance(data, bytes): #if the data is in bytes decode it
                 data = data.decode()
             print(f"{tag:25}: {data}")
-    sys.stdout = sys.stdout
+    sys.stdout = original_stdout
         
 
 def checkSuffix(argv):
