@@ -3,6 +3,7 @@ from tkinter import filedialog
 import customtkinter
 from PIL import Image
 from PIL.ExifTags import TAGS
+import os
 
 
 
@@ -51,7 +52,7 @@ def fetch_metadata():
         except:
             return
         metadata = {
-            "Filename": image.filename,
+            "Filename": os.path.basename(image.filename),
             "Image Size": image.size,
             "Image Height": image.height,
             "Image Width": image.width,
@@ -80,6 +81,8 @@ def fetch_metadata():
                 label = customtkinter.CTkLabel(master=metadata_label, text=f"{tag}: {data}\n", font=("Helvetica", 18))
                 label.grid(row=index+1, column=0, sticky="w")
                 index = index + 1
+        update_button = customtkinter.CTkButton(master=frame_img, text="Update MD")
+        update_button.pack(pady=15)
 
     else:
         return
