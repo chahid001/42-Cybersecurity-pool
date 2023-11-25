@@ -4,6 +4,15 @@ from cryptography.fernet import Fernet
 
 original_stdout = sys.stdout
 
+def readKey(args):
+    try:
+        file = open(args, "r")
+    except:
+        print(f"{args}: no such file or directory.")
+        exit(1)
+    key = file.read()
+    checkKey(key)
+
 def encryptKey(args):
     key = Fernet.generate_key()
     fernet = Fernet(key)
@@ -28,6 +37,7 @@ def checkKey(args):
     sys.stdout = file
     print(encryptKey(args))
     sys.stdout = original_stdout
+    print("Key was successfully saved in ft_otp.key.")
 
 def checkArgs(args):
     for x in args:
@@ -47,7 +57,7 @@ def main():
     if (args.g):
         ret = checkArgs(args.g)
         if ret == 1:
-                return
+            readKey(args.g)
         else:
             checkKey(args.g)
     # elif (args.k):
