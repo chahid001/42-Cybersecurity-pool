@@ -1,4 +1,3 @@
-import scorpion
 from tkinter import *
 from tkinter import filedialog
 import customtkinter
@@ -36,16 +35,21 @@ def load_image(path):
     pic = customtkinter.CTkImage(light_image=pic, size=(300, 360))
     
     if image_label:
-        image_label.configure(image=pic)
+        image_label.configure(image=pic, text="")
         image_label.image = pic
     else:
         image_label = customtkinter.CTkLabel(master=image_fr, image=pic, text="")
         image_label.pack()
-    
+
+
+
 def fetch_metadata():
     global metadata_label
     if image_label:
-        image = Image.open(path)
+        try:
+            image = Image.open(path)
+        except:
+            return
         metadata = {
             "Filename": image.filename,
             "Image Size": image.size,
@@ -62,23 +66,20 @@ def fetch_metadata():
         metadata_label.grid(row=0, column=0, sticky="w")
         index = 0
         for data, value in metadata.items():
-            label = customtkinter.CTkLabel(master=metadata_label, text=f"{data}: {value}\n")
+            label = customtkinter.CTkLabel(master=metadata_label, text=f"{data}: {value}\n", font=("Helvetica", 18))
             label.grid(row=index+1, column=0, sticky="w")
             index = index + 1
 
         exif = image.getexif()
         if exif:
-            # label = customtkinter.CTkLabel(master=metadata_label, text="EXIF Data")
-            # label.grid(row=index+2, column=0, sticky="w")
             for tag_id in exif:
                 tag = TAGS.get(tag_id, tag_id) #get tag name from the pillow dictionnary or just stick with the defalt
                 data = exif.get(tag_id) #get the value associated with the tag
                 if isinstance(data, bytes): #if the data is in bytes decode it
                     data = data.decode()
-                label = customtkinter.CTkLabel(master=metadata_label, text=f"{tag:10}: {data}\n")
+                label = customtkinter.CTkLabel(master=metadata_label, text=f"{tag}: {data}\n", font=("Helvetica", 18))
                 label.grid(row=index+1, column=0, sticky="w")
                 index = index + 1
-
 
     else:
         return
@@ -94,6 +95,12 @@ button_fetch.pack(side=LEFT, pady=15, padx=20)
 
 frame_data = customtkinter.CTkScrollableFrame(master=root, fg_color="#27374D", width=600, height=480)
 frame_data.pack(side=LEFT, padx=50, expand=True)
+
+metadata_label = customtkinter.CTkLabel(master=frame_data, text="No Data", font=("Helvetica", 28))
+metadata_label.pack(expand=True, pady=200)
+
+image_label = customtkinter.CTkLabel(master=image_fr, text="+\nAdd Your Image", font=("Helvetica", 25))
+image_label.pack()
 
 
     
