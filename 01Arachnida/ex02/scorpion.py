@@ -23,7 +23,7 @@ def extractMetadata(x):
     filename = file[0:(file.find("."))] + ".metadata"
     f = open(filename, "w")
     metada = {
-        "Filename": image.filename,
+        "Filename": file,
         "Image Size": image.size,
         "Image Height": image.height,
         "Image Width": image.width,

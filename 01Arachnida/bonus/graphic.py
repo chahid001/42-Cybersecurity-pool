@@ -4,6 +4,7 @@ import customtkinter
 from PIL import Image
 from PIL.ExifTags import TAGS
 import os
+from collections import namedtuple
 
 
 
@@ -16,9 +17,13 @@ root.title("Scorpion GUI")
 
 frame_img = customtkinter.CTkFrame(master=root, fg_color="#27374D", width=400, height=480)
 frame_img.pack(side=RIGHT, padx=50, expand=True)
+
+
 image_label = None
 path = None
 metadata_label = None
+metadata = {}
+exif_data = {}
 
 def open_image():
     global path
@@ -42,15 +47,55 @@ def load_image(path):
         image_label = customtkinter.CTkLabel(master=image_fr, image=pic, text="")
         image_label.pack()
 
-
-
-def fetch_metadata():
+def update_metadata():
     global metadata_label
+    global metadata
+    global exif
+
     if image_label:
         try:
             image = Image.open(path)
         except:
             return
+        if metadata_label:
+            metadata_label.destroy()
+        metadata_label = customtkinter.CTkLabel(master=frame_data, text="")
+        metadata_label.grid(row=0, column=0, sticky="w", pady=10)
+
+        index = 0
+        for data, value in metadata.items():
+            label = customtkinter.CTkLabel(master=metadata_label, text=f"{data}:    ")
+            label.grid(row=index+1, column=0, sticky="w")
+            entry = customtkinter.CTkEntry(master=metadata_label)
+            entry.grid(row=index+1, column=1, sticky="w", pady=15)
+            entry.insert(0, f"{value}")
+            index = index + 1
+
+        if exif_data:
+            for tag, data in exif_data.items():
+                label = customtkinter.CTkLabel(master=metadata_label, text=f"{tag}:    ")
+                label.grid(row=index+1, column=0, sticky="w")
+                entry = customtkinter.CTkEntry(master=metadata_label)
+                entry.grid(row=index+1, column=1, sticky="w", pady=15)
+                entry.insert(0, f"{data}")
+                index = index + 1
+    else:
+        return
+
+def fetch_metadata():
+    global metadata_label
+    global metadata
+    global exif_data
+
+    if image_label:
+        try:
+            image = Image.open(path)
+        except:
+            return
+        
+        if metadata:
+            metadata.destroy()
+
         metadata = {
             "Filename": os.path.basename(image.filename),
             "Image Size": image.size,
@@ -61,27 +106,38 @@ def fetch_metadata():
             "Image is Animated": getattr(image, "is_animated", False),
             "Frames in Image": getattr(image, "n_frames", 1)
         }
+
         if metadata_label:
             metadata_label.destroy()
+
         metadata_label = customtkinter.CTkLabel(master=frame_data, text="")
         metadata_label.grid(row=0, column=0, sticky="w")
+        
         index = 0
         for data, value in metadata.items():
             label = customtkinter.CTkLabel(master=metadata_label, text=f"{data}: {value}\n", font=("Helvetica", 18))
             label.grid(row=index+1, column=0, sticky="w")
             index = index + 1
 
+        
+        if exif_data:
+            exif_data.destroy()
+        
         exif = image.getexif()
+
         if exif:
             for tag_id in exif:
                 tag = TAGS.get(tag_id, tag_id) #get tag name from the pillow dictionnary or just stick with the defalt
                 data = exif.get(tag_id) #get the value associated with the tag
                 if isinstance(data, bytes): #if the data is in bytes decode it
-                    data = data.decode()
+                    data =  data.decode()
+
                 label = customtkinter.CTkLabel(master=metadata_label, text=f"{tag}: {data}\n", font=("Helvetica", 18))
                 label.grid(row=index+1, column=0, sticky="w")
                 index = index + 1
-        update_button = customtkinter.CTkButton(master=frame_img, text="Update MD")
+                exif_data[tag] = data
+
+        update_button = customtkinter.CTkButton(master=frame_img, text="Update MD", command=update_metadata)
         update_button.pack(pady=15)
 
     else:
